@@ -16,6 +16,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.JComboBox;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
@@ -64,6 +65,7 @@ public class CodexLauncherFrame extends JFrame {
     private final JTextField configPathField = new JTextField();
     private final JTextField dataHomeField = new JTextField();
     private final JTextField guidelineMdField = new JTextField();
+    private final JComboBox<String> sandboxModeBox = new JComboBox<String>(new String[] {"danger-full-access", "workspace-write", "read-only"});
     private final JTextArea conversationArea = new JTextArea();
     private final JTextArea promptArea = new JTextArea();
     private final JTextArea guidelinePreviewArea = new JTextArea();
@@ -210,6 +212,16 @@ public class CodexLauncherFrame extends JFrame {
         autoApproveCheckBox.setForeground(TEXT_DARK);
         autoApproveCheckBox.setToolTipText("\u4f1a\u4f7f\u7528 Codex CLI \u7684 --dangerously-bypass-approvals-and-sandbox\uff0c\u53ea\u5efa\u8bae\u5728\u4f60\u4fe1\u4efb\u7684\u9879\u76ee\u76ee\u5f55\u4e2d\u5f00\u542f\u3002");
         panel.add(autoApproveCheckBox, gbc);
+
+        gbc.gridy = 5;
+        JPanel sandboxPanel = new JPanel(new BorderLayout(8, 0));
+        sandboxPanel.setOpaque(false);
+        JLabel sandboxLabel = new JLabel("Sandbox");
+        sandboxLabel.setForeground(TEXT_DARK);
+        sandboxPanel.add(sandboxLabel, BorderLayout.WEST);
+        sandboxModeBox.setToolTipText("GUI \u542f\u52a8\u65f6\u5efa\u8bae\u7528 danger-full-access\uff0c\u53ef\u907f\u514d Windows sandbox CreateProcessWithLogonW 1326 \u9519\u8bef\u3002");
+        sandboxPanel.add(sandboxModeBox, BorderLayout.CENTER);
+        panel.add(sandboxPanel, gbc);
         gbc.gridwidth = 1;
 
         return panel;
@@ -595,6 +607,7 @@ public class CodexLauncherFrame extends JFrame {
             activeDataHome = codexHome;
             boolean saveSession = saveSessionCheckBox.isSelected();
             boolean autoApprove = autoApproveCheckBox.isSelected();
+            String sandboxMode = String.valueOf(sandboxModeBox.getSelectedItem());
             boolean resume = saveSession && activeSessionId.length() > 0;
             String promptWithContext = buildPromptWithContext(prompt);
 
@@ -603,7 +616,7 @@ public class CodexLauncherFrame extends JFrame {
             promptArea.setText("");
             setStatus(resume ? "\u6b63\u5728\u6062\u590d\u5e76\u7ee7\u7eed\u5386\u53f2\u5bf9\u8bdd..." : "\u6b63\u5728\u521b\u5efa\u65b0\u5bf9\u8bdd...");
 
-            runningWorker = createCodexWorker(project, codexHome, promptWithContext, resume, saveSession, autoApprove);
+            runningWorker = createCodexWorker(project, codexHome, promptWithContext, resume, saveSession, autoApprove, sandboxMode);
             runningWorker.execute();
         } catch (Exception ex) {
             showWarning(ex.getMessage());
@@ -704,11 +717,11 @@ public class CodexLauncherFrame extends JFrame {
         }
     }
 
-    private SwingWorker<Integer, String> createCodexWorker(File project, File codexHome, String prompt, boolean resume, boolean saveSession, boolean autoApprove) {
+    private SwingWorker<Integer, String> createCodexWorker(File project, File codexHome, String prompt, boolean resume, boolean saveSession, boolean autoApprove, String sandboxMode) {
         return new SwingWorker<Integer, String>() {
             @Override
             protected Integer doInBackground() throws Exception {
-                List<String> command = buildCodexCommand(project, resume, saveSession, autoApprove);
+                List<String> command = buildCodexCommand(project, resume, saveSession, autoApprove, sandboxMode);
                 publish(commandLinePreview(command, codexHome));
 
                 ProcessBuilder builder = new ProcessBuilder(command);
@@ -800,12 +813,14 @@ public class CodexLauncherFrame extends JFrame {
         SwingUtilities.invokeLater(() -> appendAssistantOutput(line));
     }
 
-    private List<String> buildCodexCommand(File project, boolean resume, boolean saveSession, boolean autoApprove) {
+    private List<String> buildCodexCommand(File project, boolean resume, boolean saveSession, boolean autoApprove, String sandboxMode) {
         List<String> command = new ArrayList<String>();
         command.add(findCodexCommand());
         if (autoApprove) {
             command.add("--dangerously-bypass-approvals-and-sandbox");
         }
+        command.add("--sandbox");
+        command.add(sandboxMode);
         command.add("exec");
         if (resume) {
             command.add("resume");

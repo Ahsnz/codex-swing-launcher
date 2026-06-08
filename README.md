@@ -11,6 +11,7 @@ Java 8 + Swing 写的 Codex 桌面启动器，用来在图形界面里控制项�
 - 如果 `config.toml` 所在目录已有 `sessions`，首次使用新数据目录时会导入旧历史
 - 可选择是否保存 Codex 会话
 - 可选择“自动执行，不再询问确认”
+- 可选择 Codex sandbox 模式，默认 `danger-full-access`
 - 可选择一个 `.md` 规范文档，发送时自动注入给 Codex
 - 自动扫描当前 Codex 数据目录下的 `skills/**/SKILL.md`
 - 可多选 Skills，并在当前对话中注入对应 skill 的说明片段
@@ -51,6 +52,20 @@ tmp
 ```
 
 这个选项只建议在你信任的项目目录中使用。它会让 Codex 跳过审批和沙箱限制。
+
+如果 exe 中运行 Codex 出现：
+
+```text
+CreateProcessWithLogonW failed: 1326
+```
+
+通常是 Codex 的 Windows sandbox 在 GUI/当前账户环境下创建子进程失败。界面里的 `Sandbox` 默认使用 `danger-full-access`，会显式传入：
+
+```text
+--sandbox danger-full-access
+```
+
+这样可以绕过该 Windows sandbox 错误。只建议对你信任的本地项目使用。
 
 ## 规范文档
 
