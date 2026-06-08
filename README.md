@@ -108,9 +108,22 @@ mvn package
 target\codex-swing-launcher-1.0-SNAPSHOT.jar
 ```
 
-## 后续打包 exe
+## 打包 exe
 
-Java 8 没有 `jpackage`，后续建议用 Launch4j 把 jar 包装成 exe。
+项目已经配置 Launch4j Maven 插件。执行：
+
+```powershell
+mvn package
+```
+
+会生成：
+
+```text
+target\codex-launcher.exe
+target\codex-swing-launcher-1.0-SNAPSHOT.jar
+```
+
+`codex-launcher.exe` 是 GUI 程序入口，不会弹出控制台窗口。
 
 打包到其他电脑使用时，目标电脑至少需要：
 
